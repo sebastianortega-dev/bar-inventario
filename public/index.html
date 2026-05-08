@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Inventario del Bar</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+
+/* LOGIN */
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
+.login-card{background:#fff;border-radius:20px;padding:2rem;width:100%;max-width:340px;box-shadow:0 2px 20px rgba(0,0,0,0.08)}
+.login-icon{width:64px;height:64px;background:#1a1a1a;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:28px}
+.login-card h1{font-size:22px;font-weight:600;text-align:center;margin-bottom:4px}
+.login-card p{font-size:14px;color:#888;text-align:center;margin-bottom:1.5rem}
+.pin-input{width:100%;padding:14px;font-size:22px;text-align:center;letter-spacing:8px;border:1.5px solid #e0e0e0;border-radius:12px;background:#f9f9f9;outline:none;margin-bottom:12px}
+.pin-input:focus{border-color:#1a1a1a;background:#fff}
+.login-btn{width:100%;padding:14px;background:#1a1a1a;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:500;cursor:pointer}
+.login-btn:active{transform:scale(0.98)}
+.login-error{color:#e24b4a;font-size:13px;text-align:center;margin-top:8px;display:none}
+
+/* APP */
+#app-screen{display:none;max-width:480px;margin:0 auto;padding-bottom:2rem}
+.top-bar{background:#1a1a1a;color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.top-bar h1{font-size:17px;font-weight:500}
+.top-bar .role-badge{font-size:12px;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:20px}
+.logout-btn{font-size:13px;color:rgba(255,255,255,0.6);background:none;border:none;cursor:pointer;padding:4px}
+
+/* TABS */
+.tabs{display:flex;background:#fff;border-bottom:1px solid #eee;position:sticky;top:57px;z-index:9}
+.tab{flex:1;padding:12px;font-size:14px;font-weight:500;text-align:center;cursor:pointer;color:#888;border-bottom:2px solid transparent}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
+
+/* HOY */
+.day-header{padding:1rem 1.25rem;background:#fff;border-bottom:1px solid #eee}
+.day-header .fecha{font-size:18px;font-weight:600}
+.day-header .sub{font-size:13px;color:#888;margin-top:2px}
+.locked-msg{background:#fff8e1;border-left:3px solid #f59e0b;padding:10px 14px;margin:12px;border-radius:0 8px 8px 0;font-size:13px;color:#92400e}
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.stat-card{background:#fff;border-radius:12px;padding:12px;text-align:center}
+.stat-card .n{font-size:22px;font-weight:600}
+.stat-card .l{font-size:12px;color:#888;margin-top:2px}
+.cat-header{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.06em;padding:8px 16px 4px;background:#f5f5f5}
+.prod-row{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#fff;border-bottom:1px solid #f0f0f0}
+.prod-name{flex:1;font-size:15px}
+.prod-name.zero{color:#bbb}
+.qty-ctrl{display:flex;align-items:center;gap:8px}
+.qty-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e0e0e0;background:#f9f9f9;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1a1a1a}
+.qty-btn:active{transform:scale(0.9);background:#eee}
+.qty-btn:disabled{opacity:0.25;cursor:default}
+.qty-num{font-size:16px;font-weight:600;min-width:32px;text-align:center}
+.qty-num.zero{color:#ccc}
+.save-wrap{padding:16px}
+.save-btn{width:100%;padding:15px;background:#1a1a1a;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer}
+.save-btn:active{transform:scale(0.98)}
+.save-btn:disabled{background:#ccc;cursor:default}
+.toast{background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;text-align:center;margin:0 16px 16px;display:none}
+.toast.show{display:block}
+
+/* HISTORIAL */
+.hist-list{padding:12px}
+.hist-card{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer;border:1.5px solid transparent}
+.hist-card:active{background:#f9f9f9}
+.hist-card .hfecha{font-size:15px;font-weight:600}
+.hist-card .hinfo{font-size:13px;color:#888;margin-top:3px}
+.hist-card .harrow{color:#ccc;font-size:18px}
+.hist-empty{text-align:center;color:#888;padding:3rem 1rem;font-size:14px}
+
+/* DETALLE HISTORIAL */
+#detalle-screen{display:none;max-width:480px;margin:0 auto;padding-bottom:2rem}
+.back-bar{background:#1a1a1a;color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;gap:12px;position:sticky;top:0}
+.back-bar button{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:0}
+.back-bar h2{font-size:16px;font-weight:500}
+.det-prod-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid #f0f0f0}
+.det-prod-row .dpname{font-size:15px}
+.det-prod-row .dpqty{font-size:15px;font-weight:600;color:#1a1a1a}
+.det-prod-row .dpqty.zero{color:#ccc}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-icon">🍹</div>
+    <h1>Inventario del Bar</h1>
+    <p>Ingresa tu PIN para continuar</p>
+    <input class="pin-input" type="password" inputmode="numeric" maxlength="6" id="pin-input" placeholder="••••••"/>
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="login-error">PIN incorrecto, intenta de nuevo</div>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div id="app-screen">
+  <div class="top-bar">
+    <h1>🍹 Inventario del Bar</h1>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="role-badge" id="role-label"></span>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tab-hoy" onclick="showTab('hoy')">Hoy</div>
+    <div class="tab" id="tab-hist" onclick="showTab('hist')">Historial</div>
+  </div>
+
+  <!-- TAB HOY -->
+  <div id="panel-hoy">
+    <div class="day-header">
+      <div class="fecha" id="fecha-hoy"></div>
+      <div class="sub" id="sub-hoy"></div>
+    </div>
+    <div id="locked-banner" class="locked-msg" style="display:none">
+      🔒 Solo el bartender puede editar el inventario de hoy
+    </div>
+    <div id="prev-banner" style="display:none;background:#e8f5e9;border-left:3px solid #1D9E75;padding:10px 14px;margin:12px;border-radius:0 8px 8px 0;font-size:13px;color:#1b5e20">
+      📋 Cargado desde el inventario del día anterior — ajusta lo que se vendió
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="n" id="stat-total">0</div><div class="l">Unidades totales</div></div>
+      <div class="stat-card"><div class="n" id="stat-filled" style="color:#1D9E75">0/27</div><div class="l">Productos llenados</div></div>
+    </div>
+    <div id="products-list"></div>
+    <div class="save-wrap">
+      <button class="save-btn" id="save-btn" onclick="guardar()">Guardar inventario</button>
+    </div>
+    <div class="toast" id="toast">✅ Inventario guardado correctamente</div>
+  </div>
+
+  <!-- TAB HISTORIAL -->
+  <div id="panel-hist" style="display:none">
+    <div class="hist-list" id="hist-list"></div>
+  </div>
+</div>
+
+<!-- DETALLE DIA -->
+<div id="detalle-screen">
+  <div class="back-bar">
+    <button onclick="volverHistorial()">‹</button>
+    <h2 id="detalle-fecha"></h2>
+  </div>
+  <div id="detalle-list"></div>
+</div>
+
+<script>
+const PRODUCTS = [
+  {cat:"Aguas", name:"Agua sin gas (plástico)"},
+  {cat:"Aguas", name:"Agua con gas (plástico)"},
+  {cat:"Aguas", name:"Agua sin gas (vidrio)"},
+  {cat:"Aguas", name:"Agua con gas (vidrio)"},
+  {cat:"Aguas", name:"Agua Cielo sabor naranja"},
+  {cat:"Cervezas", name:"Pilsen Trujillo"},
+  {cat:"Cervezas", name:"Pilsen Callao"},
+  {cat:"Cervezas", name:"Cusqueña Negra"},
+  {cat:"Cervezas", name:"Cusqueña Dorada"},
+  {cat:"Cervezas", name:"Cusqueña Trigo"},
+  {cat:"Cervezas", name:"Corona Clásica"},
+  {cat:"Cervezas", name:"Stella Artois"},
+  {cat:"Cervezas", name:"Heineken"},
+  {cat:"Gaseosas", name:"Coca Cola (vidrio)"},
+  {cat:"Gaseosas", name:"Inca Kola (vidrio)"},
+  {cat:"Gaseosas", name:"Coca Cola Zero (vidrio)"},
+  {cat:"Gaseosas", name:"Inca Kola Zero (vidrio)"},
+  {cat:"Gaseosas", name:"Fanta Clásica (lata)"},
+  {cat:"Gaseosas", name:"Fanta Uva (lata)"},
+  {cat:"Gaseosas", name:"Fanta Berry (lata)"},
+  {cat:"Gaseosas", name:"Coca Cola Clásica (lata)"},
+  {cat:"Otros", name:"Gatorade"},
+  {cat:"Vinos Tacama", name:"Tacama Blanco de Blancos"},
+  {cat:"Vinos Tacama", name:"Tacama Tinto Selección Especial"},
+  {cat:"Vinos Tacama", name:"Tacama Tinto Don Manuel"},
+  {cat:"Vinos Tabernero", name:"Tabernero Tuyo Gran Rosé"},
+  {cat:"Vinos Tabernero", name:"Tabernero Tuyo Borgoña"},
+];
+
+const DAYS = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+let role = null;
+let qtys = Array(PRODUCTS.length).fill(0);
+let today = new Date().toISOString().slice(0,10);
+
+function fmtFecha(str){
+  const d = new Date(str+'T12:00:00');
+  return DAYS[d.getDay()] + ', ' + d.getDate() + ' de ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+async function doLogin(){
+  const pin = document.getElementById('pin-input').value.trim();
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+  try {
+    const r = await fetch('/api/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});
+    const data = await r.json();
+    if(!r.ok){ err.style.display='block'; return; }
+    role = data.role;
+    initApp();
+  } catch(e){ err.style.display='block'; }
+}
+
+document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function initApp(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('role-label').textContent = role === 'bartender' ? '🧑‍🍳 Bartender' : '👤 Administrador';
+  const d = new Date();
+  document.getElementById('fecha-hoy').textContent = DAYS[d.getDay()] + ', ' + d.getDate() + ' de ' + MONTHS[d.getMonth()];
+  document.getElementById('sub-hoy').textContent = d.getFullYear();
+  if(role !== 'bartender'){
+    document.getElementById('locked-banner').style.display = 'block';
+    document.getElementById('save-btn').disabled = true;
+  }
+  cargarHoy();
+}
+
+async function cargarHoy(){
+  try {
+    const r = await fetch('/api/inventario/'+today);
+    const resp = await r.json();
+    const rows = resp.data || resp;
+    qtys = Array(PRODUCTS.length).fill(0);
+    rows.forEach(row => {
+      const i = PRODUCTS.findIndex(p => p.name === row.producto);
+      if(i >= 0) qtys[i] = row.cantidad;
+    });
+    const banner = document.getElementById('prev-banner');
+    if(resp.from_previous && role === 'bartender'){
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch(e){}
+  renderProducts();
+}
+
+function renderProducts(){
+  const canEdit = role === 'bartender';
+  const cats = [...new Set(PRODUCTS.map(p => p.cat))];
+  let html = '';
+  cats.forEach(cat => {
+    html += `<div class="cat-header">${cat}</div>`;
+    PRODUCTS.forEach((p,i) => {
+      if(p.cat !== cat) return;
+      const q = qtys[i];
+      const dis = canEdit ? '' : 'disabled';
+      html += `<div class="prod-row">
+        <div class="prod-name${q===0?' zero':''}">${p.name}</div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="chg(${i},-1)" ${dis}>−</button>
+          <div class="qty-num${q===0?' zero':''}" id="qn-${i}">${q}</div>
+          <button class="qty-btn" onclick="chg(${i},1)" ${dis}>+</button>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('products-list').innerHTML = html;
+  updateStats();
+}
+
+function chg(i, d){
+  qtys[i] = Math.max(0, qtys[i]+d);
+  const el = document.getElementById('qn-'+i);
+  el.textContent = qtys[i];
+  el.className = 'qty-num' + (qtys[i]===0?' zero':'');
+  updateStats();
+}
+
+function updateStats(){
+  const total = qtys.reduce((a,b)=>a+b,0);
+  const filled = qtys.filter(q=>q>0).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-filled').textContent = filled+'/27';
+}
+
+async function guardar(){
+  const productos = PRODUCTS.map((p,i) => ({producto: p.name, cantidad: qtys[i]}));
+  try {
+    const r = await fetch('/api/inventario/'+today, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productos})});
+    if(r.ok){
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 2500);
+    }
+  } catch(e){ alert('Error al guardar, intenta de nuevo'); }
+}
+
+function logout(){
+  role = null;
+  qtys = Array(PRODUCTS.length).fill(0);
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pin-input').value = '';
+}
+
+function showTab(tab){
+  document.getElementById('panel-hoy').style.display = tab==='hoy'?'block':'none';
+  document.getElementById('panel-hist').style.display = tab==='hist'?'block':'none';
+  document.getElementById('tab-hoy').className = 'tab'+(tab==='hoy'?' active':'');
+  document.getElementById('tab-hist').className = 'tab'+(tab==='hist'?' active':'');
+  if(tab==='hist') cargarHistorial();
+}
+
+async function cargarHistorial(){
+  try {
+    const r = await fetch('/api/historial');
+    const rows = await r.json();
+    const list = document.getElementById('hist-list');
+    if(!rows.length){ list.innerHTML='<div class="hist-empty">Aún no hay inventarios guardados</div>'; return; }
+    list.innerHTML = rows.map(row => `
+      <div class="hist-card" onclick="verDetalle('${row.fecha}')">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="hfecha">${fmtFecha(row.fecha)}</div>
+            <div class="hinfo">${row.total} unidades · ${row.productos_con_stock} productos con stock</div>
+          </div>
+          <div class="harrow">›</div>
+        </div>
+      </div>`).join('');
+  } catch(e){}
+}
+
+async function verDetalle(fecha){
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('detalle-screen').style.display = 'block';
+  document.getElementById('detalle-fecha').textContent = fmtFecha(fecha);
+  try {
+    const r = await fetch('/api/historial/'+fecha);
+    const rows = await r.json();
+    const cats = [...new Set(PRODUCTS.map(p => p.cat))];
+    let html = '';
+    cats.forEach(cat => {
+      const prods = PRODUCTS.filter(p => p.cat===cat);
+      html += `<div class="cat-header">${cat}</div>`;
+      prods.forEach(p => {
+        const row = rows.find(r => r.producto===p.name);
+        const q = row ? row.cantidad : 0;
+        html += `<div class="det-prod-row">
+          <div class="dpname">${p.name}</div>
+          <div class="dpqty${q===0?' zero':''}">${q}</div>
+        </div>`;
+      });
+    });
+    document.getElementById('detalle-list').innerHTML = html;
+  } catch(e){}
+}
+
+function volverHistorial(){
+  document.getElementById('detalle-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+}
+</script>
+</body>
+</html>
